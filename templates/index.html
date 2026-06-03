@@ -254,10 +254,13 @@
     </div>
     <div class="form-row">
       <label>特徴</label>
-      <div class="feature-checkboxes">
-        <label><input type="checkbox" id="feat-phone" value="phone"> 電話</label>
-        <label><input type="checkbox" id="feat-window" value="window"> 窓際</label>
-        <label><input type="checkbox" id="feat-leader" value="leader"> 班長近</label>
+      <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+        <button type="button" id="feat-phone" onclick="toggleFeature('phone')"
+          style="padding:10px 16px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-size:.95rem;cursor:pointer;">電話</button>
+        <button type="button" id="feat-window" onclick="toggleFeature('window')"
+          style="padding:10px 16px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-size:.95rem;cursor:pointer;">窓際</button>
+        <button type="button" id="feat-leader" onclick="toggleFeature('leader')"
+          style="padding:10px 16px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-size:.95rem;cursor:pointer;">班長近</button>
       </div>
     </div>
     <div class="btn-row">
@@ -619,10 +622,31 @@ function showToast(msg) {
 }
 
 // ---------- 席追加モーダル ----------
+const selectedFeatures = new Set();
+
+function toggleFeature(f) {
+  const btn = document.getElementById("feat-" + f);
+  if (selectedFeatures.has(f)) {
+    selectedFeatures.delete(f);
+    btn.style.background = "#fff";
+    btn.style.borderColor = "#d1d5db";
+    btn.style.color = "#333";
+  } else {
+    selectedFeatures.add(f);
+    btn.style.background = "#2c3e50";
+    btn.style.borderColor = "#2c3e50";
+    btn.style.color = "#fff";
+  }
+}
+
 function openAddSeatModal() {
   document.getElementById("add-seat-label").value = "";
+  selectedFeatures.clear();
   ["phone","window","leader"].forEach(f => {
-    document.getElementById("feat-" + f).checked = false;
+    const btn = document.getElementById("feat-" + f);
+    btn.style.background = "#fff";
+    btn.style.borderColor = "#d1d5db";
+    btn.style.color = "#333";
   });
   document.getElementById("add-seat-modal").classList.add("open");
 }
@@ -632,9 +656,7 @@ function closeAddSeatModal() {
 
 async function submitAddSeat() {
   const label = document.getElementById("add-seat-label").value.trim();
-  const features = ["phone","window","leader"].filter(f =>
-    document.getElementById("feat-" + f).checked
-  );
+  const features = [...selectedFeatures];
   const res = await fetch("/api/add_seat", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
