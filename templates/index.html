@@ -325,22 +325,32 @@ function onDateChange(iso) {
 // ---------- ユーザー名 ----------
 function getUser() { return document.getElementById("user-input").value.trim(); }
 
-// ---------- データ取得 ----------
-async function loadBookings() {
-  const res = await fetch("/api/bookings?date=" + viewDate);
-  const list = await res.json();
-  // 初回読み込み完了後にグリッドと追加ボタンを表示
+// ---------- ローディング非表示 ----------
+function showGrid() {
   document.getElementById("loading").style.display = "none";
   document.getElementById("seat-grid").style.display = "grid";
   document.getElementById("add-seat-btn").style.display = "flex";
-  bookingsBySeat = {};
-  list.forEach(b => {
-    if (!bookingsBySeat[b.seat_id]) bookingsBySeat[b.seat_id] = [];
-    bookingsBySeat[b.seat_id].push(b);
-  });
-  renderGrid();
-  scheduleAlarms();
-  updateHeaderStatus();
+}
+
+// ---------- データ取得 ----------
+async function loadBookings() {
+  try {
+    const res = await fetch("/api/bookings?date=" + viewDate);
+    const list = await res.json();
+    bookingsBySeat = {};
+    list.forEach(b => {
+      if (!bookingsBySeat[b.seat_id]) bookingsBySeat[b.seat_id] = [];
+      bookingsBySeat[b.seat_id].push(b);
+    });
+  } catch(e) {
+    // サーバーエラーでも画面は表示する
+    bookingsBySeat = {};
+  } finally {
+    showGrid();
+    renderGrid();
+    scheduleAlarms();
+    updateHeaderStatus();
+  }
 }
 
 // ---------- ヘッダーステータス ----------
@@ -691,7 +701,14 @@ if (Notification.permission === "default") {
   Notification.requestPermission();
 }
 
-setViewDate(todayISO()); // 日付表示を初期化してデータ取得
+// 起動時に席リストと予約を両方取得
+(async () => {
+  try {
+    const res = await fetch("/api/seats");
+    SEATS = await res.json();
+  } catch(e) { /* サーバースリープ中でも続行 */ }
+  setViewDate(todayISO());
+})();
 setInterval(loadBookings, 30000);
 </script>
 </body>
