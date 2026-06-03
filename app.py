@@ -1,7 +1,18 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from datetime import datetime, date
-import sqlite3, os
+import sqlite3, os, pytz
+
+JST = pytz.timezone('Asia/Tokyo')
+
+def now_jst():
+    return datetime.now(JST)
+
+def today_jst():
+    return now_jst().date().isoformat()
+
+def time_jst():
+    return now_jst().strftime("%H:%M")
 
 app = Flask(__name__)
 CORS(app)  # Flutter アプリからのクロスオリジンリクエストを許可
@@ -113,8 +124,8 @@ def add_seat():
 
 @app.route("/api/bookings")
 def get_bookings():
-    today = date.today().isoformat()
-    now   = datetime.now().strftime("%H:%M")
+    today = today_jst()
+    now   = time_jst()
     target_date = request.args.get("date", "")
     con = get_db()
     if target_date:
@@ -141,7 +152,7 @@ def book():
     user       = data["user"].strip()
     start_time = data.get("start_time", "").strip()
     end_time   = data["end_time"]
-    today      = date.today().isoformat()
+    today      = today_jst()
     book_date  = data.get("date", today)
 
     if not user:
@@ -183,7 +194,7 @@ def extend():
     seat_id    = int(data["seat_id"])
     user       = data["user"].strip()
     end_time   = data["end_time"]
-    today      = date.today().isoformat()
+    today      = today_jst()
 
     try:
         datetime.strptime(end_time, "%H:%M")
@@ -216,7 +227,7 @@ def cancel():
     data    = request.json
     seat_id = int(data["seat_id"])
     user    = data["user"].strip()
-    today   = date.today().isoformat()
+    today   = today_jst()
 
     con = get_db()
     result = con.execute(
