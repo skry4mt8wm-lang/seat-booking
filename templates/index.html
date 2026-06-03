@@ -180,8 +180,11 @@
     <span class="legend-item"><span class="badge mine">自分</span> 自分の予約</span>
   </div>
 
-  <div class="grid" id="seat-grid"></div>
-  <button class="add-seat-btn" onclick="openAddSeatModal()">＋ 席を追加</button>
+  <div id="loading" style="text-align:center;padding:40px;color:#888;font-size:1rem;">
+    ⏳ 読み込み中...
+  </div>
+  <div class="grid" id="seat-grid" style="display:none;"></div>
+  <button class="add-seat-btn" id="add-seat-btn" onclick="openAddSeatModal()" style="display:none;">＋ 席を追加</button>
 </div>
 
 <!-- 予約モーダル -->
@@ -326,6 +329,10 @@ function getUser() { return document.getElementById("user-input").value.trim(); 
 async function loadBookings() {
   const res = await fetch("/api/bookings?date=" + viewDate);
   const list = await res.json();
+  // 初回読み込み完了後にグリッドと追加ボタンを表示
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("seat-grid").style.display = "grid";
+  document.getElementById("add-seat-btn").style.display = "flex";
   bookingsBySeat = {};
   list.forEach(b => {
     if (!bookingsBySeat[b.seat_id]) bookingsBySeat[b.seat_id] = [];
