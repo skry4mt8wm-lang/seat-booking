@@ -107,6 +107,9 @@ def init_db():
     con.commit()
     con.close()
 
+# Gunicorn などで起動された場合も init_db を実行する
+init_db()
+
 def get_seats():
     con = get_db()
     rows = con.execute("SELECT id, label, category FROM seats ORDER BY id").fetchall()
