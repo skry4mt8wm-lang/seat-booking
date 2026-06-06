@@ -34,6 +34,45 @@
 
   .container { padding: 12px; }
 
+  /* 自動予約パネル */
+  .auto-book-panel {
+    background: #fff; border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.1); margin-bottom: 16px;
+  }
+  .auto-book-panel h2 { font-size: 1rem; font-weight: bold; margin-bottom: 14px; color: #2c3e50; }
+
+  .pref-label { font-size: .85rem; color: #555; margin-bottom: 8px; }
+  .pref-buttons { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pref-btn {
+    flex: 1; min-width: 80px; padding: 12px 8px;
+    border: 2px solid #d1d5db; border-radius: 12px;
+    background: #fff; font-size: .9rem; cursor: pointer;
+    text-align: center; transition: all .15s;
+  }
+  .pref-btn.selected {
+    border-color: #2c3e50; background: #2c3e50; color: #fff;
+  }
+  .pref-btn:active { opacity: .8; }
+
+  .time-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .time-field { flex: 1; }
+  .time-field label { font-size: .8rem; color: #555; display: block; margin-bottom: 4px; }
+  .time-field input {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid #d1d5db; border-radius: 10px;
+    font-size: 1rem;
+  }
+  .time-field input:focus { outline: none; border-color: #2c3e50; }
+
+  .btn-auto-book {
+    width: 100%; padding: 16px;
+    background: #2c3e50; color: #fff;
+    border: none; border-radius: 12px;
+    font-size: 1.1rem; font-weight: bold; cursor: pointer;
+  }
+  .btn-auto-book:active { opacity: .8; }
+  .btn-auto-book:disabled { background: #9ca3af; cursor: not-allowed; }
+
   .legend {
     display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
     background: #fff; border-radius: 10px; padding: 10px 12px;
@@ -41,12 +80,13 @@
   }
   .legend-item { display: flex; align-items: center; gap: 4px; font-size: .78rem; }
   .badge { padding: 3px 8px; border-radius: 12px; font-size: .72rem; font-weight: bold; }
-  .badge.phone  { background: #dbeafe; color: #1d4ed8; }
-  .badge.window { background: #dcfce7; color: #15803d; }
-  .badge.leader { background: #fef9c3; color: #854d0e; }
-  .badge.free   { background: #f3f4f6; color: #6b7280; }
-  .badge.taken  { background: #fee2e2; color: #b91c1c; }
-  .badge.mine   { background: #ede9fe; color: #6d28d9; }
+  .badge.window   { background: #dcfce7; color: #15803d; }
+  .badge.no_phone { background: #dbeafe; color: #1d4ed8; }
+  .badge.other    { background: #f3f4f6; color: #6b7280; }
+  .badge.free     { background: #f3f4f6; color: #6b7280; }
+  .badge.taken    { background: #fee2e2; color: #b91c1c; }
+  .badge.mine     { background: #ede9fe; color: #6d28d9; }
+  .badge.prev     { background: #fde8d8; color: #9a3412; }
 
   .grid {
     display: grid;
@@ -58,13 +98,12 @@
     background: #fff; border-radius: 14px; padding: 14px 10px;
     box-shadow: 0 1px 4px rgba(0,0,0,.1);
     border: 2px solid transparent;
-    active-scale: .97;
     transition: transform .1s;
     user-select: none;
   }
-  .seat:active { transform: scale(.96); }
   .seat.taken  { border-color: #fca5a5; background: #fff5f5; }
   .seat.mine   { border-color: #a78bfa; background: #faf5ff; }
+  .seat.prev   { border-color: #fdba74; background: #fff7ed; }
   .seat-num    { font-size: 1.5rem; font-weight: bold; margin-bottom: 6px; }
   .seat-tags   { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; min-height: 24px; }
   .seat-info   { font-size: .72rem; color: #666; min-height: 1em; }
@@ -130,17 +169,7 @@
   .alarm-actions .btn-extend { color: #1d4ed8; }
   .alarm-actions .btn-dismiss { color: #555; }
 
-  .add-seat-btn {
-    display: flex; align-items: center; justify-content: center;
-    gap: 6px; width: 100%; margin-top: 12px;
-    padding: 14px; border: 2px dashed #cbd5e1; border-radius: 14px;
-    background: #fff; color: #64748b; font-size: 1rem; font-weight: bold;
-    cursor: pointer;
-  }
-  .add-seat-btn:active { background: #f8fafc; }
 
-  .feature-checkboxes { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
-  .feature-checkboxes label { display: flex; align-items: center; gap: 4px; font-size: .9rem; }
 </style>
 </head>
 <body>
@@ -171,44 +200,45 @@
 </div>
 
 <div class="container">
+
+  <!-- 自動予約パネル -->
+  <div class="auto-book-panel">
+    <h2>🎯 自動席割り当て</h2>
+    <div class="pref-label">希望する位置を選択してください</div>
+    <div class="pref-buttons">
+      <button class="pref-btn selected" id="pref-window" onclick="selectPref('window')">🪟 窓際</button>
+      <button class="pref-btn" id="pref-no_phone" onclick="selectPref('no_phone')">🔕 電話なし</button>
+      <button class="pref-btn" id="pref-other" onclick="selectPref('other')">🎲 おまかせ</button>
+    </div>
+    <div class="time-row">
+      <div class="time-field">
+        <label>開始時刻</label>
+        <input type="time" id="auto-start-time">
+      </div>
+      <div class="time-field">
+        <label>終了時刻</label>
+        <input type="time" id="auto-end-time">
+      </div>
+    </div>
+    <button class="btn-auto-book" id="btn-auto-book" onclick="submitAutoBook()">
+      ✨ 席を自動割り当てする
+    </button>
+  </div>
+
   <div class="legend">
-    <span class="legend-item"><span class="badge phone">電話</span> 電話が近い席</span>
-    <span class="legend-item"><span class="badge window">窓際</span> 窓際の席</span>
-    <span class="legend-item"><span class="badge leader">班長近</span> 班長に近い席</span>
-    <span class="legend-item"><span class="badge free">空き</span> 予約可能</span>
-    <span class="legend-item"><span class="badge taken">予約済</span> 他の人が使用中</span>
-    <span class="legend-item"><span class="badge mine">自分</span> 自分の予約</span>
+    <span class="legend-item"><span class="badge window">窓際</span></span>
+    <span class="legend-item"><span class="badge no_phone">電話なし</span></span>
+    <span class="legend-item"><span class="badge other">おまかせ</span></span>
+    <span class="legend-item"><span class="badge taken">予約済</span></span>
+    <span class="legend-item"><span class="badge mine">自分</span></span>
+    <span class="legend-item"><span class="badge prev">前日使用</span> 連続予約不可</span>
   </div>
 
   <div id="loading" style="text-align:center;padding:40px;color:#888;font-size:1rem;">
     ⏳ 読み込み中...
   </div>
   <div class="grid" id="seat-grid" style="display:none;"></div>
-  <button class="add-seat-btn" id="add-seat-btn" onclick="openAddSeatModal()" style="display:none;">＋ 席を追加</button>
-</div>
-
-<!-- 予約モーダル -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <h2>席 <span id="modal-seat-num"></span> を予約</h2>
-    <div class="form-row">
-      <label>日付</label>
-      <input type="date" id="modal-date">
-    </div>
-    <div class="form-row">
-      <label>使用開始時刻</label>
-      <input type="time" id="modal-start-time">
-    </div>
-    <div class="form-row">
-      <label>使用終了時刻</label>
-      <input type="time" id="modal-end-time">
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="submitBooking()">予約する</button>
-      <button class="btn btn-close" onclick="closeModal()">閉じる</button>
-    </div>
-  </div>
+  <!-- 席追加は管理者画面(/admin)で行います -->
 </div>
 
 <!-- キャンセルモーダル -->
@@ -246,46 +276,21 @@
   </div>
 </div>
 
-<!-- 席追加モーダル -->
-<div class="modal-overlay" id="add-seat-modal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <h2>席を追加</h2>
-    <div class="form-row">
-      <label>席番号・名前（空欄で自動採番）</label>
-      <input type="text" id="add-seat-label" placeholder="例：16、会議室A" maxlength="20">
-    </div>
-    <div class="form-row">
-      <label>特徴</label>
-      <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
-        <button type="button" id="feat-phone" onclick="toggleFeature('phone')"
-          style="padding:10px 16px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-size:.95rem;cursor:pointer;">電話</button>
-        <button type="button" id="feat-window" onclick="toggleFeature('window')"
-          style="padding:10px 16px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-size:.95rem;cursor:pointer;">窓際</button>
-        <button type="button" id="feat-leader" onclick="toggleFeature('leader')"
-          style="padding:10px 16px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-size:.95rem;cursor:pointer;">班長近</button>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="submitAddSeat()">追加する</button>
-      <button class="btn btn-close" onclick="closeAddSeatModal()">閉じる</button>
-    </div>
-  </div>
-</div>
 
 <div id="toast"></div>
 
 <script>
 let SEATS = {{ seats | tojson }};
-const FEATURE_LABEL = { phone: "電話", window: "窓際", leader: "班長近" };
-const FEATURE_CLASS = { phone: "phone", window: "window", leader: "leader" };
+const CATEGORIES = {{ categories | tojson }};
+const CAT_CLASS = { window: "window", no_phone: "no_phone", other: "other" };
 
-// seat_id → 予約リスト（複数可）
 let bookingsBySeat = {};
 let selectedSeat = null;
 let selectedBooking = null;
 let alarmTimers = {};
-let viewDate = todayISO(); // 表示中の日付
+let viewDate = todayISO();
+let currentPref = "window";
+let yesterdaySeatId = null; // 前日使用した席のID
 
 function todayISO() {
   const d = new Date();
@@ -304,6 +309,11 @@ function addHHMM(hhmm, minutes) {
   const [h, m] = hhmm.split(":").map(Number);
   const d = new Date(); d.setHours(h, m + minutes, 0, 0);
   return d.toTimeString().slice(0, 5);
+}
+function isoAddDays(iso, days) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 // ---------- 日付ナビゲーション ----------
@@ -325,15 +335,38 @@ function onDateChange(iso) {
 // ---------- ユーザー名 ----------
 function getUser() { return document.getElementById("user-input").value.trim(); }
 
+// ---------- 希望選択 ----------
+function selectPref(pref) {
+  currentPref = pref;
+  ["window", "no_phone", "other"].forEach(p => {
+    document.getElementById("pref-" + p).classList.toggle("selected", p === pref);
+  });
+}
+
 // ---------- ローディング非表示 ----------
 function showGrid() {
   document.getElementById("loading").style.display = "none";
   document.getElementById("seat-grid").style.display = "grid";
-  document.getElementById("add-seat-btn").style.display = "flex";
+}
+
+// ---------- 前日の予約を取得 ----------
+async function loadYesterdaySeat(user) {
+  if (!user) { yesterdaySeatId = null; return; }
+  const yesterday = isoAddDays(viewDate, -1);
+  try {
+    const res = await fetch("/api/bookings?date=" + yesterday);
+    const list = await res.json();
+    const mine = list.find(b => b.user === user && !b.cancelled);
+    yesterdaySeatId = mine ? mine.seat_id : null;
+  } catch(e) {
+    yesterdaySeatId = null;
+  }
 }
 
 // ---------- データ取得 ----------
 async function loadBookings() {
+  const user = getUser();
+  await loadYesterdaySeat(user);
   try {
     const res = await fetch("/api/bookings?date=" + viewDate);
     const list = await res.json();
@@ -343,13 +376,28 @@ async function loadBookings() {
       bookingsBySeat[b.seat_id].push(b);
     });
   } catch(e) {
-    // サーバーエラーでも画面は表示する
     bookingsBySeat = {};
   } finally {
     showGrid();
     renderGrid();
     scheduleAlarms();
     updateHeaderStatus();
+    updateAutoBookButton();
+  }
+}
+
+// ---------- 自動予約ボタンの状態更新 ----------
+function updateAutoBookButton() {
+  const user = getUser();
+  const btn = document.getElementById("btn-auto-book");
+  const all = Object.values(bookingsBySeat).flat();
+  const mine = all.find(b => b.user === user && user !== "");
+  if (mine) {
+    btn.disabled = true;
+    btn.textContent = "✅ 予約済み（席 " + mine.seat_id + "）";
+  } else {
+    btn.disabled = false;
+    btn.textContent = "✨ 席を自動割り当てする";
   }
 }
 
@@ -357,13 +405,13 @@ async function loadBookings() {
 function updateHeaderStatus() {
   const user = getUser();
   const el = document.getElementById("header-status");
-  if (!user) { el.textContent = "名前を入力して席を予約してください"; return; }
+  if (!user) { el.textContent = "名前を入力して席を自動割り当てしてください"; return; }
   const all = Object.values(bookingsBySeat).flat();
   const mine = all.find(b => b.user === user);
   if (mine) {
     el.textContent = `席 ${mine.seat_id} を予約中 ${mine.start_time}〜${mine.end_time}`;
   } else {
-    el.textContent = `${user} さん：空いている席をタップして予約`;
+    el.textContent = `${user} さん：希望を選んで「自動割り当て」を押してください`;
   }
 }
 
@@ -376,24 +424,30 @@ function renderGrid() {
 
   SEATS.forEach(seat => {
     const list = bookingsBySeat[seat.id] || [];
-    // 現在進行中の予約（start <= now < end）
     const current = list.find(b => b.start_time <= now && now < b.end_time);
-    // 自分の予約（現在or将来）
     const mine = list.find(b => b.user === user && user !== "");
-
     const isCurrentlyTaken = !!current;
     const isMine = !!mine;
     const isMineNow = mine && mine.start_time <= now && now < mine.end_time;
+    const isPrev = seat.id === yesterdaySeatId;
 
     const div = document.createElement("div");
-    div.className = "seat" + (isMineNow ? " mine" : isCurrentlyTaken ? " taken" : "");
-    div.onclick = () => onSeatClick(seat, list, current, mine);
+    let cls = "seat";
+    if (isMineNow) cls += " mine";
+    else if (isMine) cls += " mine";
+    else if (isPrev) cls += " prev";
+    else if (isCurrentlyTaken) cls += " taken";
+    div.className = cls;
 
-    const tags = seat.features.map(f =>
-      `<span class="badge ${FEATURE_CLASS[f]}">${FEATURE_LABEL[f]}</span>`
-    ).join("");
+    // 前日使用席はクリック無効（参照のみ）
+    if (isMine) {
+      div.onclick = () => openCancelModal(seat, mine);
+    }
 
-    // 全予約を時系列で表示する行を生成
+    const catName = CATEGORIES[seat.category] || seat.category;
+    const catCls  = CAT_CLASS[seat.category] || "other";
+    const tags = `<span class="badge ${catCls}">${catName}</span>`;
+
     const isToday = viewDate === todayISO();
     function bookingLine(b) {
       const isNowActive = isToday && b.start_time <= now && now < b.end_time;
@@ -404,7 +458,9 @@ function renderGrid() {
     }
 
     let statusBadge;
-    if (isMineNow) {
+    if (isPrev) {
+      statusBadge = `<span class="badge prev">前日使用</span>`;
+    } else if (isMineNow) {
       statusBadge = `<span class="badge mine">自分</span>`;
     } else if (isMine) {
       statusBadge = `<span class="badge mine">自分（予約済）</span>`;
@@ -418,6 +474,7 @@ function renderGrid() {
 
     const infoLines = list.length > 0
       ? list.map(bookingLine).join("<br>")
+      : isPrev ? "<span style='font-size:.72rem;color:#9a3412'>前日使用のため予約不可</span>"
       : "空き";
 
     div.innerHTML = `
@@ -429,58 +486,47 @@ function renderGrid() {
   });
 }
 
-// ---------- クリック処理 ----------
-function onSeatClick(seat, list, current, mine) {
-  if (!getUser()) { showToast("先に名前を入力してください"); return; }
-  if (mine) { openCancelModal(seat, mine); return; }
-  // 他人が現在使用中でも将来の時間帯に予約できる
-  openModal(seat, list);
-}
+// ---------- 自動予約 ----------
+async function submitAutoBook() {
+  const user = getUser();
+  if (!user) { showToast("名前を入力してください"); return; }
 
-// ---------- 予約モーダル ----------
-function openModal(seat, list) {
-  selectedSeat = seat;
-  document.getElementById("modal-seat-num").textContent = seat.label;
-  document.getElementById("modal-date").value = viewDate;
+  const startTime = document.getElementById("auto-start-time").value;
+  const endTime   = document.getElementById("auto-end-time").value;
+  if (!startTime) { showToast("開始時刻を入力してください"); return; }
+  if (!endTime)   { showToast("終了時刻を入力してください"); return; }
+  if (startTime >= endTime) { showToast("終了時刻は開始時刻より後にしてください"); return; }
 
-  // 開始時刻：予約が連なっている場合は最後の終了時刻、なければ今（今日のみ）
-  const lastEnd = list.length > 0
-    ? list.reduce((max, b) => b.end_time > max ? b.end_time : max, "00:00")
-    : null;
-  const isToday = viewDate === todayISO();
-  const defaultStart = lastEnd
-    ? (lastEnd > nowHHMM() || !isToday ? lastEnd : nowHHMM())
-    : (isToday ? nowHHMM() : "09:00");
-  document.getElementById("modal-start-time").value = defaultStart;
-  document.getElementById("modal-end-time").value = addHHMM(defaultStart, 180);
+  const btn = document.getElementById("btn-auto-book");
+  btn.disabled = true;
+  btn.textContent = "⏳ 割り当て中...";
 
-  document.getElementById("modal").classList.add("open");
-}
-function closeModal() {
-  document.getElementById("modal").classList.remove("open");
-  selectedSeat = null;
-}
-
-async function submitBooking() {
-  const user      = getUser();
-  const startTime = document.getElementById("modal-start-time").value;
-  const endTime   = document.getElementById("modal-end-time").value;
-  if (!user)      { showToast("名前を入力してください"); return; }
-  if (!startTime) { showToast("開始時刻を選択してください"); return; }
-  if (!endTime)   { showToast("終了時刻を選択してください"); return; }
-
-  const bookDate = document.getElementById("modal-date").value;
-  const res = await fetch("/api/book", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ seat_id: selectedSeat.id, user, date: bookDate, start_time: startTime, end_time: endTime })
-  });
-  const data = await res.json();
-  if (!res.ok) { showToast(data.error); return; }
-
-  closeModal();
-  showToast(`席 ${selectedSeat.label} を ${formatDateJA(bookDate)} ${startTime}〜${endTime} で予約しました`);
-  await loadBookings();
+  try {
+    const res = await fetch("/api/auto_book", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        user,
+        preference: currentPref,
+        start_time: startTime,
+        end_time: endTime,
+        date: viewDate
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error);
+      updateAutoBookButton();
+      return;
+    }
+    const seat = data.seat;
+    const prefNames = { window: "窓際", no_phone: "電話なし", other: "おまかせ" };
+    showToast(`✅ 席 ${seat.label} が割り当てられました（${prefNames[currentPref]}）`);
+    await loadBookings();
+  } catch(e) {
+    showToast("エラーが発生しました");
+    updateAutoBookButton();
+  }
 }
 
 // ---------- キャンセルモーダル ----------
@@ -591,7 +637,6 @@ function openExtendModal() {
 
   document.getElementById("extend-info").textContent =
     `席 ${b.seat_id} の現在の終了時刻：${b.end_time}`;
-  // デフォルトは現在の終了時刻＋1時間
   const [h, m] = b.end_time.split(":").map(Number);
   const d = new Date(); d.setHours(h + 1, m, 0, 0);
   document.getElementById("extend-end-time").value = d.toTimeString().slice(0, 5);
@@ -627,7 +672,7 @@ async function submitExtend() {
   closeExtendModal();
   dismissAlarm();
   showToast(`席 ${alarmBooking.seat_id} を ${endTime} まで延長しました`);
-  await loadBookings(); // アラームも再スケジュール
+  await loadBookings();
 }
 
 // ---------- Toast ----------
@@ -638,75 +683,33 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 3000);
 }
 
-// ---------- 席追加モーダル ----------
-const selectedFeatures = new Set();
-
-function toggleFeature(f) {
-  const btn = document.getElementById("feat-" + f);
-  if (selectedFeatures.has(f)) {
-    selectedFeatures.delete(f);
-    btn.style.background = "#fff";
-    btn.style.borderColor = "#d1d5db";
-    btn.style.color = "#333";
-  } else {
-    selectedFeatures.add(f);
-    btn.style.background = "#2c3e50";
-    btn.style.borderColor = "#2c3e50";
-    btn.style.color = "#fff";
-  }
-}
-
-function openAddSeatModal() {
-  document.getElementById("add-seat-label").value = "";
-  selectedFeatures.clear();
-  ["phone","window","leader"].forEach(f => {
-    const btn = document.getElementById("feat-" + f);
-    btn.style.background = "#fff";
-    btn.style.borderColor = "#d1d5db";
-    btn.style.color = "#333";
-  });
-  document.getElementById("add-seat-modal").classList.add("open");
-}
-function closeAddSeatModal() {
-  document.getElementById("add-seat-modal").classList.remove("open");
-}
-
-async function submitAddSeat() {
-  const label = document.getElementById("add-seat-label").value.trim();
-  const features = [...selectedFeatures];
-  const res = await fetch("/api/add_seat", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ label, features })
-  });
-  const data = await res.json();
-  if (!res.ok) { showToast(data.error); return; }
-
-  closeAddSeatModal();
-  // 席リストを再取得してグリッドを更新
-  const seatsRes = await fetch("/api/seats");
-  SEATS = await seatsRes.json();
-  showToast(`席 ${data.label} を追加しました`);
-  await loadBookings();
-}
 
 // ---------- 初期化 ----------
+// デフォルト時刻をセット（今から3時間）
+(function initTimes() {
+  const now = nowHHMM();
+  document.getElementById("auto-start-time").value = now;
+  document.getElementById("auto-end-time").value = addHHMM(now, 180);
+})();
+
 document.getElementById("user-input").addEventListener("input", () => {
   renderGrid();
   scheduleAlarms();
   updateHeaderStatus();
+  updateAutoBookButton();
+  // ユーザー変更時に前日席も再取得
+  loadYesterdaySeat(getUser()).then(() => renderGrid());
 });
 
 if (Notification.permission === "default") {
   Notification.requestPermission();
 }
 
-// 起動時に席リストと予約を両方取得
 (async () => {
   try {
     const res = await fetch("/api/seats");
     SEATS = await res.json();
-  } catch(e) { /* サーバースリープ中でも続行 */ }
+  } catch(e) {}
   setViewDate(todayISO());
 })();
 setInterval(loadBookings, 30000);
