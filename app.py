@@ -283,6 +283,26 @@ def cancel():
         return jsonify({"error": "予約が見つかりません（名前が違う可能性があります）"}), 404
     return jsonify({"ok": True})
 
+@app.route("/api/add_seat", methods=["POST"])
+def add_seat():
+    data     = request.json or {}
+    label    = data.get("label", "").strip()
+    category = data.get("category", "other")
+    if category not in CATEGORIES:
+        category = "other"
+    con = get_db()
+    if not label:
+        count = con.execute("SELECT COUNT(*) FROM seats").fetchone()[0]
+        label = str(count + 1)
+    cur = con.execute(
+        "INSERT INTO seats (label, category) VALUES (?,?)",
+        (label, category)
+    )
+    new_id = cur.lastrowid
+    con.commit()
+    con.close()
+    return jsonify({"id": new_id, "label": label, "category": category})
+
 # ── 管理者ルート ───────────────────────────────────
 
 def admin_required(f):
